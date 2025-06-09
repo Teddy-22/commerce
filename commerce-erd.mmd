@@ -1,0 +1,103 @@
+erDiagram
+    PRODUCT {
+        string id PK
+        string handle
+        string title
+        string description
+        string descriptionHtml
+        boolean availableForSale
+        object priceRange
+        array tags
+        string updatedAt
+    }
+
+    PRODUCT_VARIANT {
+        string id PK
+        string title
+        boolean availableForSale
+        object price
+        array selectedOptions
+    }
+
+    PRODUCT_OPTION {
+        string id PK
+        string name
+        array values
+    }
+
+    IMAGE {
+        string url
+        string altText
+        number width
+        number height
+    }
+
+    COLLECTION {
+        string handle PK
+        string title
+        string description
+        object seo
+        string updatedAt
+        string path
+    }
+
+    CART {
+        string id PK
+        string checkoutUrl
+        object cost
+        number totalQuantity
+    }
+
+    CART_ITEM {
+        string id PK
+        number quantity
+        object cost
+        object merchandise
+    }
+
+    PAGE {
+        string id PK
+        string title
+        string handle
+        string body
+        string bodySummary
+        object seo
+        string createdAt
+        string updatedAt
+    }
+
+    MENU {
+        string title
+        string path
+    }
+
+    SEO {
+        string title
+        string description
+    }
+
+    MONEY {
+        string amount
+        string currencyCode
+    }
+
+    PRODUCT ||--o{ PRODUCT_VARIANT : "has variants"
+    PRODUCT ||--o{ PRODUCT_OPTION : "has options"
+    PRODUCT ||--o{ IMAGE : "has images"
+    PRODUCT ||--o| IMAGE : "has featuredImage"
+    PRODUCT ||--o| SEO : "has SEO metadata"
+    
+    PRODUCT_VARIANT }o--|| MONEY : "has price"
+    
+    COLLECTION ||--o{ PRODUCT : "contains"
+    COLLECTION ||--o| SEO : "has SEO metadata"
+    
+    CART ||--o{ CART_ITEM : "contains"
+    CART }o--|| MONEY : "has totalAmount"
+    CART }o--|| MONEY : "has subtotalAmount"
+    CART }o--|| MONEY : "has totalTaxAmount"
+    
+    CART_ITEM }o--|| PRODUCT_VARIANT : "references merchandise"
+    CART_ITEM }o--|| MONEY : "has totalAmount"
+    
+    PAGE ||--o| SEO : "has SEO metadata"
