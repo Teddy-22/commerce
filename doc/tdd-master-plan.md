@@ -178,10 +178,58 @@ jobs:
 ---
 
 ## 10. Shopify API 통합 테스트 패턴
+### 10.1 Consumer-Driven Contract 테스트
+| 개념 | 설명 |
+|------|------|
+| 정의 | 소비자(프론트엔드)가 제공자(Shopify API)에게 기대하는 계약을 명시적으로 정의하는 테스트 방식 |
+| 목적 | API 변경 시 소비자 코드 영향을 조기 감지, 안전한 API 진화 보장 |
+| 도구 | @pact-foundation/pact |
+| 산출물 | JSON 계약 파일 (pacts/*.json) |
+
+### 10.2 구현된 Pact 계약 테스트
+| 기능 | 테스트 파일 | 검증 대상 |
+|------|------------|-----------|
+| 장바구니 생성 | `__tests__/shopify-cart.pact.ts` | `createCart()` → `cartCreate` mutation |
+| 상품 추가 | `__tests__/shopify-cart.pact.ts` | `addToCart()` → `cartLinesAdd` mutation |
+| 수량 변경 | `__tests__/shopify-cart.pact.ts` | `updateCart()` → `cartLinesUpdate` mutation |
+| 상품 제거 | `__tests__/shopify-cart.pact.ts` | `removeFromCart()` → `cartLinesRemove` mutation |
+
+### 10.3 Pact 테스트 실행 방법
+```bash
+# 모든 Pact 테스트 실행
+pnpm pact:verify
+
+# 계약 파일 생성 및 Broker 업로드
+pnpm pact:publish
+```
+
+### 10.4 Pact 테스트 패턴
+```typescript
+// 1. 상호작용 정의
+provider.addInteraction({
+  state: 'cart is empty',                          // 전제 조건
+  uponReceiving: 'a cartCreate mutation',          // 시나리오 설명
+  withRequest: {                                   // 요청 형식
+    method: 'POST',
+    path: '/api/2023-01/graphql.json',
+    headers: { 'Content-Type': 'application/json' },
+    body: { query: like('mutation cartCreate...') }
+  },
+  willRespondWith: {                               // 기대 응답
+    status: 200,
+    body: { data: { cartCreate: { cart: { id: like('gid://...') } } } }
+  }
+});
+
+// 2. 상호작용 검증
+const result = await createCart();
+expect(result.id).toBeDefined();
+```
+
+### 10.5 기타 API 테스트 패턴
 | 패턴 | 설명 |
 |------|------|
-| Consumer Pact | GraphQL Mutation 계약 유지 |
-| MSW Runtime Mock | 개발·CI에서 외부 호출 차단 |
+| MSW Runtime Mock | 개발·CI에서 외부 호출 차단, 응답 시뮬레이션 |
 | Rate-limit Simulation | 429 응답 후 재시도 로직 검증 |
 
 ---
@@ -197,7 +245,7 @@ jobs:
 
 ## 12. 유지보수 정책
 - 새 기능 = **Red → Green** 테스트 선행  
-- 코드 리뷰 체크리스트에 “테스트 포함”  
+- 코드 리뷰 체크리스트에 "테스트 포함"  
 - 실패 테스트 24 h 내 수정 SLA  
 - 분기별 커버리지·가이드 업데이트
 
