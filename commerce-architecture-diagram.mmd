@@ -1,0 +1,108 @@
+flowchart TD
+    %% Client Layer
+    subgraph ClientLayer["Client Layer"]
+        Browser["Browser/User Interface"]
+        style Browser fill:#4672b4,color:white
+    end
+
+    %% Frontend Layer
+    subgraph FrontendLayer["Frontend Layer (Next.js)"]
+        %% Pages and Routes
+        Pages["Pages & Routes\n/app directory"]
+        style Pages fill:#47956f,color:white
+        
+        %% Components
+        UIComponents["UI Components\n/components"]
+        style UIComponents fill:#47956f,color:white
+        
+        %% Client Components
+        ClientComponents["Client Components\n- Cart UI\n- Product Gallery\n- Search"]
+        style ClientComponents fill:#47956f,color:white
+        
+        %% Server Components
+        ServerComponents["Server Components\n- Product Listings\n- Collection Pages"]
+        style ServerComponents fill:#47956f,color:white
+        
+        %% Context Providers
+        Contexts["Context Providers\n- CartContext\n- ProductContext"]
+        style Contexts fill:#47956f,color:white
+        
+        %% Server Actions
+        ServerActions["Server Actions\n- Cart Operations\n- Search"]
+        style ServerActions fill:#8b251e,color:white
+    end
+    
+    %% Data Layer
+    subgraph DataLayer["Data Access Layer"]
+        ShopifyLib["Shopify Integration\n/lib/shopify"]
+        style ShopifyLib fill:#de953e,color:white
+        
+        TypeDefs["Type Definitions\n/lib/shopify/types.ts"]
+        style TypeDefs fill:#de953e,color:white
+        
+        Queries["GraphQL Queries\n/lib/shopify/queries"]
+        style Queries fill:#de953e,color:white
+        
+        Mutations["GraphQL Mutations\n/lib/shopify/mutations"]
+        style Mutations fill:#de953e,color:white
+    end
+    
+    %% External Services
+    subgraph ExternalServices["External Services"]
+        ShopifyAPI["Shopify Storefront API\nGraphQL Endpoint"]
+        style ShopifyAPI fill:#4672b4,color:white
+        
+        CDN["Content Delivery Network\nImage Optimization"]
+        style CDN fill:#4672b4,color:white
+    end
+    
+    %% Cache Layer
+    subgraph CacheLayer["Cache Layer"]
+        NextCache["Next.js Cache\nRevalidation Tags"]
+        style NextCache fill:#8b251e,color:white
+    end
+    
+    %% Data Storage
+    subgraph DataStorage["Data Storage"]
+        Cookies["Browser Cookies\n- cartId"]
+        style Cookies fill:#de953e,color:white
+    end
+    
+    %% Connections and Data Flow
+    Browser <--> Pages
+    Browser <--> ClientComponents
+    Pages --> UIComponents
+    Pages --> ServerComponents
+    Pages --> ClientComponents
+    
+    ClientComponents <--> Contexts
+    ServerComponents --> ServerActions
+    ClientComponents --> ServerActions
+    
+    ServerActions --> ShopifyLib
+    ServerComponents --> ShopifyLib
+    ShopifyLib --> Queries
+    ShopifyLib --> Mutations
+    ShopifyLib --> TypeDefs
+    
+    ShopifyLib <--> ShopifyAPI
+    ServerComponents <--> NextCache
+    ServerActions <--> Cookies
+    
+    ShopifyAPI --> CDN
+    CDN --> Browser
+    
+    %% Key Processes
+    Browser -- "1. User Browses Products" --> Pages
+    Pages -- "2. Fetch Products" --> ServerComponents
+    ServerComponents -- "3. Query Products" --> ShopifyLib
+    ShopifyLib -- "4. GraphQL Request" --> ShopifyAPI
+    ShopifyAPI -- "5. Product Data" --> ShopifyLib
+    ShopifyLib -- "6. Reshaped Data" --> ServerComponents
+    ServerComponents -- "7. Rendered HTML" --> Browser
+    Browser -- "8. Add to Cart" --> ClientComponents
+    ClientComponents -- "9. Optimistic UI Update" --> Contexts
+    ClientComponents -- "10. Server Action" --> ServerActions
+    ServerActions -- "11. Cart Mutation" --> ShopifyLib
+    ShopifyLib -- "12. Update Cart" --> ShopifyAPI
+    ServerActions -- "13. Store cartId" --> Cookies

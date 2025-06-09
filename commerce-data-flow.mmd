@@ -1,0 +1,88 @@
+sequenceDiagram
+    %% Define participants
+    actor User as User
+    participant Browser as Browser
+    participant NextServer as Next.js Server
+    participant NextClient as Next.js Client
+    participant ShopifyAPI as Shopify API
+    participant CDN as CDN (Images)
+
+    %% Process 1: Browsing Products (Home Page)
+    rect rgb(240, 245, 255)
+    Note over User,ShopifyAPI: Process 1: Browsing Products (Home Page)
+    User->>Browser: Visit home page (/)
+    Browser->>NextServer: HTTP GET request
+    NextServer->>ShopifyAPI: getProducts() query
+    ShopifyAPI-->>NextServer: Return featured products
+    NextServer->>ShopifyAPI: getCollections() query
+    ShopifyAPI-->>NextServer: Return collections
+    NextServer->>Browser: Send HTML with data
+    Browser->>NextClient: Hydrate React components
+    Browser->>CDN: Request product images
+    CDN-->>Browser: Return optimized images
+    NextClient->>Browser: Interactive UI ready
+    Browser-->>User: Display home page with products
+    end
+
+    %% Process 2: Viewing Product Details
+    rect rgb(245, 240, 255)
+    Note over User,ShopifyAPI: Process 2: Viewing Product Details
+    User->>Browser: Click product (/product/[handle])
+    Browser->>NextServer: HTTP GET request
+    NextServer->>ShopifyAPI: getProduct(handle) query
+    ShopifyAPI-->>NextServer: Return product details
+    NextServer->>ShopifyAPI: getProductRecommendations(id)
+    ShopifyAPI-->>NextServer: Return related products
+    NextServer->>Browser: Send HTML with product data
+    Browser->>NextClient: Hydrate React components
+    Browser->>CDN: Request high-res product images
+    CDN-->>Browser: Return gallery images
+    NextClient->>Browser: Initialize ProductProvider context
+    Browser-->>User: Display product details page
+    end
+
+    %% Process 3: Adding to Cart
+    rect rgb(255, 245, 240)
+    Note over User,ShopifyAPI: Process 3: Adding to Cart
+    User->>Browser: Select variant & click "Add to Cart"
+    Browser->>NextClient: Trigger addCartItem() (optimistic)
+    NextClient->>Browser: Update cart UI immediately
+    Browser->>NextServer: Invoke server action addItem()
+    
+    alt First cart interaction
+        NextServer->>ShopifyAPI: createCart() mutation
+        ShopifyAPI-->>NextServer: Return new cart with ID
+        NextServer->>Browser: Set cartId cookie
+    else Existing cart
+        NextServer->>Browser: Read cartId from cookies
+    end
+    
+    NextServer->>ShopifyAPI: cartLinesAdd mutation
+    ShopifyAPI-->>NextServer: Return updated cart
+    NextServer->>Browser: Confirm cart update
+    Browser-->>User: Show "Added to cart" confirmation
+    end
+
+    %% Process 4: Checkout
+    rect rgb(240, 255, 245)
+    Note over User,ShopifyAPI: Process 4: Checkout Process
+    User->>Browser: Open cart & click "Checkout"
+    Browser->>NextServer: Invoke redirectToCheckout()
+    NextServer->>Browser: Read cartId from cookies
+    NextServer->>ShopifyAPI: getCart(cartId) query
+    ShopifyAPI-->>NextServer: Return cart with checkoutUrl
+    NextServer->>Browser: HTTP redirect to checkoutUrl
+    Browser->>ShopifyAPI: Request Shopify checkout page
+    ShopifyAPI-->>Browser: Serve checkout page
+    Browser-->>User: Display Shopify checkout
+    
+    Note over User,ShopifyAPI: User completes purchase on Shopify
+    end
+    
+    %% Process 5: Post-Purchase (webhook)
+    rect rgb(245, 255, 240)
+    Note over ShopifyAPI,NextServer: Process 5: Revalidation via Webhook
+    ShopifyAPI->>NextServer: POST /api/revalidate (product/update)
+    NextServer->>NextServer: revalidateTag(TAGS.products)
+    NextServer-->>ShopifyAPI: 200 OK response
+    end
