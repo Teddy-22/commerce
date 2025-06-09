@@ -1,3 +1,10 @@
+// MSW 모킹 설정 (개발 환경에서만 활성화)
+if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true' && typeof window !== 'undefined') {
+  import('../__mocks__/browser').then(({ worker }) =>
+    worker.start({ onUnhandledRequest: 'bypass' })
+  );
+}
+
 import { CartProvider } from 'components/cart/cart-context';
 import { Navbar } from 'components/layout/navbar';
 import { WelcomeToast } from 'components/welcome-toast';
