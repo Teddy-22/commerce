@@ -60,6 +60,46 @@ pnpm dev
 
 Your app should now be running on [localhost:3000](http://localhost:3000/).
 
+## Running Tests
+
+This project uses Jest for unit tests and Playwright for E2E tests. All tests can be run with Mock Service Worker (MSW) which intercepts API calls to provide consistent test data.
+
+### Unit Tests
+
+```bash
+# Run all unit tests
+pnpm test:unit
+
+# Run unit tests with coverage report
+pnpm test:coverage
+
+# Watch mode for development
+pnpm test:watch
+```
+
+### E2E Tests
+
+```bash
+# Install Playwright browsers (first time only)
+pnpm exec playwright install
+
+# Run E2E tests
+pnpm test:e2e
+
+# Run E2E tests with UI mode
+pnpm exec playwright test --ui
+```
+
+### Development with Mocks
+
+You can run the development server with API mocking enabled:
+
+```bash
+pnpm dev:mock
+```
+
+This uses MSW to intercept API calls to Shopify, allowing you to develop without a real Shopify store connection.
+
 <details>
   <summary>Expand if you work at Vercel and want to run locally and / or contribute</summary>
 
